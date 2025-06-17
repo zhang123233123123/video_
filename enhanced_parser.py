@@ -31,43 +31,48 @@ class EnhancedVIPParser:
         # 真实可用的第三方解析接口（按优先级排序）
         self.parse_apis = [
             {
-                'name': '线路1-高清稳定',
+                'name': '线路0-优酷首选',
+                'url': 'https://jx.xymp4.cc/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路1-稳定解析',
+                'url': 'https://www.8090g.cn/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路2-高清解析',
+                'url': 'https://jx.m3u8.tv/jiexi/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路3-全网VIP',
+                'url': 'https://www.yemu.xyz/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路4-极速播放',
+                'url': 'https://jx.xyflv.cc/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路5-蓝光解析',
+                'url': 'https://api.jiexi.la/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路6-万能解析',
+                'url': 'https://jx.aidouer.net/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路7-高清稳定',
                 'url': 'https://jx.xmflv.com/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路2-快速解析',  
-                'url': 'https://api.bb3.buzz/jiexi/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路3-通用解析',
+                'name': '线路8-通用解析',
                 'url': 'https://jx.618g.com/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路4-备用解析',
-                'url': 'https://okjx.cc/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路5-VIP专用',
-                'url': 'https://www.1717yun.com/jx/ty.php?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路6-无广告',
-                'url': 'https://vip.gaotian.love/api/?key=8CNrwNGWumgOHNK5r3H7jsDJb1XhPp&url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路7-超清画质',
-                'url': 'https://jx.jsonplayer.com/player/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路8-极速播放',
-                'url': 'https://jx.bozrc.com:4433/player/?url={}',
                 'type': 'iframe'
             }
         ]
