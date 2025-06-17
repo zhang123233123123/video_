@@ -28,7 +28,7 @@ class EnhancedVIPParser:
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
         ]
         
-        # 通用第三方解析接口（非优酷平台使用）
+        # 真实可用的第三方解析接口（按优先级排序）
         self.parse_apis = [
             {
                 'name': '线路1-高清稳定',
@@ -36,39 +36,79 @@ class EnhancedVIPParser:
                 'type': 'iframe'
             },
             {
-                'name': '线路2-稳定解析',
-                'url': 'https://www.8090g.cn/?url={}',
+                'name': '线路2-快速解析',  
+                'url': 'https://api.bb3.buzz/jiexi/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路3-高清解析',
-                'url': 'https://jx.m3u8.tv/jiexi/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路4-全网VIP',
-                'url': 'https://www.yemu.xyz/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路5-极速播放',
-                'url': 'https://jx.xyflv.cc/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路6-蓝光解析',
-                'url': 'https://api.jiexi.la/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路7-万能解析',
-                'url': 'https://jx.aidouer.net/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路8-通用解析',
+                'name': '线路3-通用解析',
                 'url': 'https://jx.618g.com/?url={}',
                 'type': 'iframe'
+            },
+            {
+                'name': '线路4-备用解析',
+                'url': 'https://okjx.cc/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路5-VIP专用',
+                'url': 'https://www.1717yun.com/jx/ty.php?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路6-无广告',
+                'url': 'https://vip.gaotian.love/api/?key=8CNrwNGWumgOHNK5r3H7jsDJb1XhPp&url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路7-超清画质',
+                'url': 'https://jx.jsonplayer.com/player/?url={}',
+                'type': 'iframe'
+            },
+            {
+                'name': '线路8-极速播放',
+                'url': 'https://jx.bozrc.com:4433/player/?url={}',
+                'type': 'iframe'
+            }
+        ]
+        
+        # 优酷专线解析接口（专门为优酷优化）
+        self.youku_special_apis = [
+            {
+                'name': '优酷专线1-高清',
+                'url': 'https://www.ckplayer.vip/jiexi/?url={}',
+                'type': 'iframe',
+                'priority': 1
+            },
+            {
+                'name': '优酷专线2-稳定',
+                'url': 'https://jiexi.yy6080.org/mx/?url={}',
+                'type': 'iframe',
+                'priority': 2
+            },
+            {
+                'name': '优酷专线3-快速',
+                'url': 'https://www.pouyun.com/?url={}',
+                'type': 'iframe',
+                'priority': 3
+            },
+            {
+                'name': '优酷专线4-超清',
+                'url': 'https://jiexi.parwix.com:4433/player/?url={}',
+                'type': 'iframe',
+                'priority': 4
+            },
+            {
+                'name': '优酷专线5-兼容',
+                'url': 'https://www.8090g.cn/?url={}',
+                'type': 'iframe',
+                'priority': 5
+            },
+            {
+                'name': '优酷专线6-专用',
+                'url': 'https://jx.m3u8.tv/jiexi/?url={}',
+                'type': 'iframe',
+                'priority': 6
             }
         ]
         
@@ -86,25 +126,8 @@ class EnhancedVIPParser:
             },
             'youku.com': {
                 'name': '优酷',
-                'parser': self._parse_youku,
-                'patterns': [r'youku\.com', r'v\.youku\.com'],
-                'preferred_apis': [  # 优酷专用解析器
-                    {
-                        'name': '优酷首选-xymp4',
-                        'url': 'https://jx.xymp4.cc/?url={}',
-                        'type': 'iframe'
-                    },
-                    {
-                        'name': '优酷备用-8090g',
-                        'url': 'https://www.8090g.cn/?url={}',
-                        'type': 'iframe'
-                    },
-                    {
-                        'name': '优酷备用-m3u8',
-                        'url': 'https://jx.m3u8.tv/jiexi/?url={}',
-                        'type': 'iframe'
-                    }
-                ]
+                'parser': self._parse_youku_special,  # 使用优酷专线解析
+                'patterns': [r'youku\.com', r'v\.youku\.com']
             },
             'bilibili.com': {
                 'name': 'B站',
@@ -181,24 +204,6 @@ class EnhancedVIPParser:
         """获取所有解析接口的URL"""
         encoded_url = quote(original_url, safe=':/?#[]@!$&\'()*+,;=')
         
-        # 检测平台，如果是优酷则使用专用解析器
-        platform_info = self.detect_platform(original_url)
-        
-        if platform_info and platform_info['key'] == 'youku.com':
-            # 优酷平台使用专用解析器
-            youku_config = self.platforms['youku.com']
-            if 'preferred_apis' in youku_config:
-                parse_urls = []
-                for api in youku_config['preferred_apis']:
-                    parse_url = api['url'].format(encoded_url)
-                    parse_urls.append({
-                        'name': api['name'],
-                        'url': parse_url,
-                        'type': api['type']
-                    })
-                return parse_urls
-        
-        # 其他平台使用通用解析器
         parse_urls = []
         for api in self.parse_apis:
             parse_url = api['url'].format(encoded_url)
@@ -206,6 +211,23 @@ class EnhancedVIPParser:
                 'name': api['name'],
                 'url': parse_url,
                 'type': api['type']
+            })
+        
+        return parse_urls
+    
+    def get_youku_parse_urls(self, original_url: str) -> List[Dict[str, str]]:
+        """获取优酷专线解析URLs"""
+        encoded_url = quote(original_url, safe=':/?#[]@!$&\'()*+,;=')
+        
+        parse_urls = []
+        # 优先使用优酷专线
+        for api in sorted(self.youku_special_apis, key=lambda x: x['priority']):
+            parse_url = api['url'].format(encoded_url)
+            parse_urls.append({
+                'name': api['name'],
+                'url': parse_url,
+                'type': api['type'],
+                'priority': api['priority']
             })
         
         return parse_urls
@@ -363,58 +385,68 @@ class EnhancedVIPParser:
                 'error': f'爱奇艺解析错误: {str(e)}'
             }
     
-    def _parse_youku(self, url: str) -> Dict[str, Any]:
-        """解析优酷视频（增强版）"""
+    def _parse_youku_special(self, url: str) -> Dict[str, Any]:
+        """优酷专线解析（增强版）"""
         try:
-            # 首先尝试从URL参数中提取vid
-            from urllib.parse import urlparse, parse_qs
-            parsed = urlparse(url)
+            headers = self.get_random_headers()
+            # 增加重试机制
+            max_retries = 3
+            response = None
+            
+            for attempt in range(max_retries):
+                try:
+                    response = self.session.get(url, headers=headers, timeout=15)
+                    if response.status_code == 200:
+                        break
+                    time.sleep(1)  # 等待1秒后重试
+                except:
+                    if attempt == max_retries - 1:
+                        raise
+                    time.sleep(1)
+            
+            title = '优酷视频'
             vid = ''
             
-            # 方法1: 从URL参数中提取vid
-            if 'vid' in parsed.query:
-                params = parse_qs(parsed.query)
-                if 'vid' in params and params['vid']:
-                    vid = params['vid'][0]
-            
-            # 如果没有从URL参数获取到，再尝试页面解析
-            if not vid:
-                headers = self.get_random_headers()
-                response = self.session.get(url, headers=headers, timeout=10)
+            if response and response.status_code == 200:
+                html = response.text
                 
-                title = '优酷视频'
+                # 更全面的标题提取
+                title_patterns = [
+                    r'<title[^>]*>(.*?)</title>',
+                    r'"title"\s*:\s*"([^"]+)"',
+                    r'videoTitle["\']?\s*:\s*["\']([^"\']+)["\']',
+                    r'data-title="([^"]+)"'
+                ]
                 
-                if response.status_code == 200:
-                    html = response.text
-                    
-                    # 提取标题
-                    title_match = re.search(r'<title>(.*?)</title>', html)
-                    if title_match:
-                        title = title_match.group(1).replace(' - 优酷视频', '').strip()
-                    
-                    # 提取视频ID
-                    vid_patterns = [
-                        r'videoId["\']?\s*:\s*["\']([^"\']+)["\']',
-                        r'vid["\']?\s*:\s*["\']([^"\']+)["\']',
-                        r'/id_([^.]+)\.html'
-                    ]
-                    
-                    for pattern in vid_patterns:
-                        match = re.search(pattern, html)
-                        if match:
-                            vid = match.group(1)
+                for pattern in title_patterns:
+                    match = re.search(pattern, html, re.IGNORECASE)
+                    if match:
+                        extracted_title = match.group(1).strip()
+                        # 清理标题
+                        extracted_title = re.sub(r'\s*-\s*优酷视频$', '', extracted_title)
+                        extracted_title = re.sub(r'\s*-\s*优酷$', '', extracted_title)
+                        if extracted_title and extracted_title != '优酷':
+                            title = extracted_title
                             break
-            else:
-                # 如果从URL参数获取到了vid，获取标题
-                headers = self.get_random_headers()
-                response = self.session.get(url, headers=headers, timeout=10)
-                title = '优酷视频'
                 
-                if response.status_code == 200:
-                    html = response.text
-                    title_match = re.search(r'<title>(.*?)</title>', html)
-                    if title_match:
-                        title = title_match.group(1).replace(' - 优酷视频', '').strip()
+                # 更全面的视频ID提取
+                vid_patterns = [
+                    r'videoId["\']?\s*:\s*["\']([^"\']+)["\']',
+                    r'vid["\']?\s*:\s*["\']([^"\']+)["\']',
+                    r'/id_([^./\?]+)',
+                    r'showid["\']?\s*:\s*["\']([^"\']+)["\']',
+                    r'"videoId":"([^"]+)"',
+                    r'data-videoid="([^"]+)"'
+                ]
+                
+                for pattern in vid_patterns:
+                    match = re.search(pattern, html, re.IGNORECASE)
+                    if match:
+                        vid = match.group(1)
+                        break
+            
+            # 生成优酷专线解析URLs
+            parse_urls = self.get_youku_parse_urls(url)
             
             return {
                 'success': True,
@@ -423,13 +455,16 @@ class EnhancedVIPParser:
                 'thumbnail': '',
                 'vid': vid,
                 'original_url': url,
-                'vip_content': True
+                'vip_content': True,
+                'parse_urls': parse_urls,
+                'best_parse_url': parse_urls[0]['url'] if parse_urls else None,
+                'platform_special': '优酷专线'  # 标识使用专线
             }
             
         except Exception as e:
             return {
                 'success': False,
-                'error': f'优酷解析错误: {str(e)}'
+                'error': f'优酷专线解析错误: {str(e)}'
             }
     
     def _parse_bilibili(self, url: str) -> Dict[str, Any]:
@@ -547,11 +582,22 @@ class EnhancedVIPParser:
     
     def get_parse_apis_info(self) -> List[Dict[str, str]]:
         """获取解析接口信息"""
-        return [
-            {
+        apis_info = []
+        
+        # 添加通用解析接口
+        for api in self.parse_apis:
+            apis_info.append({
                 'name': api['name'],
                 'url': api['url'].replace('{}', '[视频链接]'),
                 'type': api['type']
-            }
-            for api in self.parse_apis
-        ] 
+            })
+        
+        # 添加优酷专线接口
+        for api in self.youku_special_apis:
+            apis_info.append({
+                'name': api['name'] + ' (优酷专线)',
+                'url': api['url'].replace('{}', '[优酷链接]'),
+                'type': api['type']
+            })
+        
+        return apis_info 
