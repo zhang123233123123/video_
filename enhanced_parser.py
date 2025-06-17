@@ -331,32 +331,55 @@ class EnhancedVIPParser:
     def _parse_youku(self, url: str) -> Dict[str, Any]:
         """解析优酷视频（增强版）"""
         try:
-            headers = self.get_random_headers()
-            response = self.session.get(url, headers=headers, timeout=10)
-            
-            title = '优酷视频'
+            # 首先尝试从URL参数中提取vid
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(url)
             vid = ''
             
-            if response.status_code == 200:
-                html = response.text
+            # 方法1: 从URL参数中提取vid
+            if 'vid' in parsed.query:
+                params = parse_qs(parsed.query)
+                if 'vid' in params and params['vid']:
+                    vid = params['vid'][0]
+            
+            # 如果没有从URL参数获取到，再尝试页面解析
+            if not vid:
+                headers = self.get_random_headers()
+                response = self.session.get(url, headers=headers, timeout=10)
                 
-                # 提取标题
-                title_match = re.search(r'<title>(.*?)</title>', html)
-                if title_match:
-                    title = title_match.group(1).replace(' - 优酷视频', '').strip()
+                title = '优酷视频'
                 
-                # 提取视频ID
-                vid_patterns = [
-                    r'videoId["\']?\s*:\s*["\']([^"\']+)["\']',
-                    r'vid["\']?\s*:\s*["\']([^"\']+)["\']',
-                    r'/id_([^.]+)\.html'
-                ]
+                if response.status_code == 200:
+                    html = response.text
+                    
+                    # 提取标题
+                    title_match = re.search(r'<title>(.*?)</title>', html)
+                    if title_match:
+                        title = title_match.group(1).replace(' - 优酷视频', '').strip()
+                    
+                    # 提取视频ID
+                    vid_patterns = [
+                        r'videoId["\']?\s*:\s*["\']([^"\']+)["\']',
+                        r'vid["\']?\s*:\s*["\']([^"\']+)["\']',
+                        r'/id_([^.]+)\.html'
+                    ]
+                    
+                    for pattern in vid_patterns:
+                        match = re.search(pattern, html)
+                        if match:
+                            vid = match.group(1)
+                            break
+            else:
+                # 如果从URL参数获取到了vid，获取标题
+                headers = self.get_random_headers()
+                response = self.session.get(url, headers=headers, timeout=10)
+                title = '优酷视频'
                 
-                for pattern in vid_patterns:
-                    match = re.search(pattern, html)
-                    if match:
-                        vid = match.group(1)
-                        break
+                if response.status_code == 200:
+                    html = response.text
+                    title_match = re.search(r'<title>(.*?)</title>', html)
+                    if title_match:
+                        title = title_match.group(1).replace(' - 优酷视频', '').strip()
             
             return {
                 'success': True,
