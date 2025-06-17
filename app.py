@@ -177,14 +177,52 @@ def main():
         st.header("支持平台")
         platforms = parser.get_supported_platforms()
         for i, platform in enumerate(platforms):
-            st.write(f"• {platform}")
+            if platform == "优酷":
+                st.write(f"• {platform} 🎯 (专线)")
+            else:
+                st.write(f"• {platform}")
+        
+        st.markdown("---")
+        
+        # 优酷专线信息
+        st.header("🚀 优酷专线")
+        st.markdown("""
+        <div style="background: #e8f5e8; padding: 0.8rem; border-radius: 6px; 
+                    border: 1px solid #4CAF50; margin: 0.5rem 0;">
+            <strong style="color: #2E7D32;">优酷专线特色</strong><br>
+            <small style="color: #388E3C;">
+            • 专门优化的解析算法<br>
+            • 6条优酷专用线路<br>
+            • 更高的解析成功率<br>
+            • 支持优酷VIP内容
+            </small>
+        </div>
+        """, unsafe_allow_html=True)
         
         st.markdown("---")
         
         # 解析线路信息
         st.header("解析线路")
         api_info = parser.get_parse_apis_info()
-        for i, api in enumerate(api_info[:6], 1):  # 显示前6个
+        
+        # 分类显示解析线路
+        youku_apis = [api for api in api_info if '优酷专线' in api['name']]
+        general_apis = [api for api in api_info if '优酷专线' not in api['name']]
+        
+        # 优酷专线
+        if youku_apis:
+            st.markdown("**优酷专线：**")
+            for i, api in enumerate(youku_apis[:3], 1):  # 显示前3个优酷专线
+                st.markdown(f"""
+                <div class="route-info" style="border-color: #4CAF50;">
+                    <strong>专线{i}</strong><br>
+                    <small>{api['name']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # 通用线路
+        st.markdown("**通用线路：**")
+        for i, api in enumerate(general_apis[:3], 1):  # 显示前3个通用线路
             st.markdown(f"""
             <div class="route-info">
                 <strong>线路{i}</strong><br>
@@ -192,8 +230,9 @@ def main():
             </div>
             """, unsafe_allow_html=True)
         
-        if len(api_info) > 6:
-            st.info(f"还有 {len(api_info) - 6} 个备用线路")
+        total_apis = len(youku_apis) + len(general_apis)
+        if total_apis > 6:
+            st.info(f"还有 {total_apis - 6} 个备用线路")
         
         st.markdown("---")
         
@@ -265,13 +304,20 @@ def main():
                             # 视频播放区域
                             st.subheader("VIP视频播放")
                             
-                            # 显示VIP标识
+                            # 显示VIP标识和专线信息
                             if result.get('vip_content'):
-                                st.info("检测到VIP内容，正在使用解析服务")
+                                if result.get('platform_special') == '优酷专线':
+                                    st.success("🎯 检测到优酷视频，正在使用优酷专线解析！")
+                                    st.info("优酷专线采用专门优化的解析算法，解析成功率更高")
+                                else:
+                                    st.info("检测到VIP内容，正在使用解析服务")
                             
                             # 解析线路选择
                             if result.get('parse_urls'):
-                                st.subheader("选择解析线路")
+                                if result.get('platform_special') == '优酷专线':
+                                    st.subheader("🚀 优酷专线解析 - 选择线路")
+                                else:
+                                    st.subheader("选择解析线路")
                                 
                                 # 初始化session state
                                 if 'selected_route_index' not in st.session_state:
