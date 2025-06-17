@@ -72,6 +72,13 @@ class EnhancedVIPParser:
             }
         ]
         
+        # 优酷专用解析接口
+        self.youku_parse_api = {
+            'name': '优酷专用解析器',
+            'url': 'https://jx.xymp4.cc/?url={}',
+            'type': 'iframe'
+        }
+        
         # 支持的视频平台
         self.platforms = {
             'v.qq.com': {
@@ -165,35 +172,18 @@ class EnhancedVIPParser:
         encoded_url = quote(original_url, safe=':/?#[]@!$&\'()*+,;=')
         
         parse_urls = []
-        for api in self.parse_apis:
-            parse_url = api['url'].format(encoded_url)
+        
+        # 检测是否为优酷视频，如果是则优先添加专用解析器
+        if self.detect_platform(original_url) and self.detect_platform(original_url)['key'] == 'youku.com':
+            youku_parse_url = self.youku_parse_api['url'].format(encoded_url)
             parse_urls.append({
-                'name': api['name'],
-                'url': parse_url,
-                'type': api['type']
+                'name': self.youku_parse_api['name'],
+                'url': youku_parse_url,
+                'type': self.youku_parse_api['type']
             })
         
-        return parse_urls
-    
-    def get_youku_parse_urls(self, original_url: str) -> List[Dict[str, str]]:
-        """获取优酷视频专用解析接口的URL - 优先使用指定解析器"""
-        encoded_url = quote(original_url, safe=':/?#[]@!$&\'()*+,;=')
-        
-        # 优酷专用解析接口，优先使用指定的解析器
-        youku_apis = [
-            {
-                'name': '优酷专用解析器-首选',
-                'url': 'https://jx.xmflv.com/?url={}',
-                'type': 'iframe'
-            }
-        ]
-        
-        # 添加其他备用解析接口
-        for api in self.parse_apis[1:]:  # 跳过第一个，因为已经在上面添加了
-            youku_apis.append(api)
-        
-        parse_urls = []
-        for api in youku_apis:
+        # 添加其他解析接口
+        for api in self.parse_apis:
             parse_url = api['url'].format(encoded_url)
             parse_urls.append({
                 'name': api['name'],
@@ -220,14 +210,8 @@ class EnhancedVIPParser:
             
             # 添加所有可用的解析链接
             if result['success']:
-                # 如果是优酷视频，使用专用的解析接口列表
-                if platform_info['key'] == 'youku.com':
-                    result['parse_urls'] = self.get_youku_parse_urls(url)
-                    result['best_parse_url'] = result['parse_urls'][0]['url'] if result['parse_urls'] else None
-                    result['preferred_parser'] = 'https://jx.xmflv.com/?url='
-                else:
-                    result['parse_urls'] = self.get_all_parse_urls(url)
-                    result['best_parse_url'] = result['parse_urls'][0]['url'] if result['parse_urls'] else None
+                result['parse_urls'] = self.get_all_parse_urls(url)
+                result['best_parse_url'] = result['parse_urls'][0]['url'] if result['parse_urls'] else None
             
             return result
         except Exception as e:
@@ -363,7 +347,7 @@ class EnhancedVIPParser:
             }
     
     def _parse_youku(self, url: str) -> Dict[str, Any]:
-        """解析优酷视频（增强版） - 优先使用指定解析器"""
+        """解析优酷视频（增强版）"""
         try:
             headers = self.get_random_headers()
             response = self.session.get(url, headers=headers, timeout=10)
@@ -399,9 +383,7 @@ class EnhancedVIPParser:
                 'thumbnail': '',
                 'vid': vid,
                 'original_url': url,
-                'vip_content': True,
-                'priority_parser': 'https://jx.xmflv.com/?url=',
-                'parser_note': '优酷视频优先使用 jx.xmflv.com 解析器'
+                'vip_content': True
             }
             
         except Exception as e:
