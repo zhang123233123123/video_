@@ -224,7 +224,7 @@ class VideoParser:
             }
     
     def _parse_youku(self, url: str) -> Dict[str, Any]:
-        """解析优酷视频 - 优先使用指定解析器"""
+        """解析优酷视频"""
         try:
             # 获取页面内容
             response = requests.get(url, headers=self.headers, timeout=10)
@@ -247,9 +247,7 @@ class VideoParser:
                     'thumbnail': '',
                     'play_url': self._get_youku_play_url(url),
                     'quality_options': ['1080P', '720P', '480P', '360P'],
-                    'vid': vid,
-                    'preferred_parser': 'https://jx.xmflv.com/?url=',
-                    'parser_note': '优酷视频优先使用 jx.xmflv.com 解析器'
+                    'vid': vid
                 }
             
             return {
@@ -364,9 +362,9 @@ class VideoParser:
         return f"https://jx.618g.com/?url={original_url}"
     
     def _get_youku_play_url(self, original_url: str) -> str:
-        """获取优酷播放地址 - 优先使用指定解析器"""
-        # 优先使用指定的解析接口
-        return f"https://jx.xmflv.com/?url={original_url}"
+        """获取优酷播放地址"""
+        # 使用优酷专用解析接口
+        return f"https://jx.xymp4.cc/?url={original_url}"
     
     def _get_mgtv_play_url(self, original_url: str) -> str:
         """获取芒果TV播放地址"""
