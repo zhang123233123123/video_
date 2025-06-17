@@ -28,46 +28,41 @@ class EnhancedVIPParser:
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
         ]
         
-        # 真实可用的第三方解析接口（按优先级排序）
+        # 通用第三方解析接口（非优酷平台使用）
         self.parse_apis = [
             {
-                'name': '线路0-优酷首选',
-                'url': 'https://jx.xymp4.cc/?url={}',
+                'name': '线路1-高清稳定',
+                'url': 'https://jx.xmflv.com/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路1-稳定解析',
+                'name': '线路2-稳定解析',
                 'url': 'https://www.8090g.cn/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路2-高清解析',
+                'name': '线路3-高清解析',
                 'url': 'https://jx.m3u8.tv/jiexi/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路3-全网VIP',
+                'name': '线路4-全网VIP',
                 'url': 'https://www.yemu.xyz/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路4-极速播放',
+                'name': '线路5-极速播放',
                 'url': 'https://jx.xyflv.cc/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路5-蓝光解析',
+                'name': '线路6-蓝光解析',
                 'url': 'https://api.jiexi.la/?url={}',
                 'type': 'iframe'
             },
             {
-                'name': '线路6-万能解析',
+                'name': '线路7-万能解析',
                 'url': 'https://jx.aidouer.net/?url={}',
-                'type': 'iframe'
-            },
-            {
-                'name': '线路7-高清稳定',
-                'url': 'https://jx.xmflv.com/?url={}',
                 'type': 'iframe'
             },
             {
@@ -92,7 +87,24 @@ class EnhancedVIPParser:
             'youku.com': {
                 'name': '优酷',
                 'parser': self._parse_youku,
-                'patterns': [r'youku\.com', r'v\.youku\.com']
+                'patterns': [r'youku\.com', r'v\.youku\.com'],
+                'preferred_apis': [  # 优酷专用解析器
+                    {
+                        'name': '优酷首选-xymp4',
+                        'url': 'https://jx.xymp4.cc/?url={}',
+                        'type': 'iframe'
+                    },
+                    {
+                        'name': '优酷备用-8090g',
+                        'url': 'https://www.8090g.cn/?url={}',
+                        'type': 'iframe'
+                    },
+                    {
+                        'name': '优酷备用-m3u8',
+                        'url': 'https://jx.m3u8.tv/jiexi/?url={}',
+                        'type': 'iframe'
+                    }
+                ]
             },
             'bilibili.com': {
                 'name': 'B站',
@@ -169,6 +181,24 @@ class EnhancedVIPParser:
         """获取所有解析接口的URL"""
         encoded_url = quote(original_url, safe=':/?#[]@!$&\'()*+,;=')
         
+        # 检测平台，如果是优酷则使用专用解析器
+        platform_info = self.detect_platform(original_url)
+        
+        if platform_info and platform_info['key'] == 'youku.com':
+            # 优酷平台使用专用解析器
+            youku_config = self.platforms['youku.com']
+            if 'preferred_apis' in youku_config:
+                parse_urls = []
+                for api in youku_config['preferred_apis']:
+                    parse_url = api['url'].format(encoded_url)
+                    parse_urls.append({
+                        'name': api['name'],
+                        'url': parse_url,
+                        'type': api['type']
+                    })
+                return parse_urls
+        
+        # 其他平台使用通用解析器
         parse_urls = []
         for api in self.parse_apis:
             parse_url = api['url'].format(encoded_url)
